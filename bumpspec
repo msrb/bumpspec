@@ -53,11 +53,12 @@ while [[ $# -ne 0 ]]; do
         *)
             if [[ $# -eq 1 ]]; then
                 chlogmessage="$1"
+                shift
+                continue
             fi
             echo "Unknown parameter: $1" 1>&2
             usage
             exit 1
-            shift
     esac
 done
 
