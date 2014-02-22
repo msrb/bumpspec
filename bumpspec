@@ -1,0 +1,96 @@
+#!/bin/bash -e
+
+specfile="*.spec"
+bumpminor=
+chlogmessage="Rebuilt"
+
+while [[ $# -ne 0 ]]; do
+
+    case "$1" in
+        "-f")
+            specfile="$2"
+            shift 2
+            ;;
+        "-r")
+            bumpminor=yes
+            shift
+            ;;
+        *)
+            if [[ $# -eq 1 ]]; then
+                chlogmessage="$1"
+            fi
+            shift
+    esac
+done
+
+
+if [ ! -f ${specfile} ]; then
+    echo "$specfile: no such file"
+    exit 1
+fi
+
+username=`git config --get user.name`
+email=`git config --get user.email`
+
+
+version=`rpmspec -P ${specfile} | sed -n 's/\s*Version:\s*\(.*\)$/\1/p'`
+
+current=`sed -n 's/^Release:\s*\([0-9.]\+\)[a-ZA-Z%]*.*/\1/p' *.spec`
+
+trailingdot=
+minoradded=
+if [[ $current == *\. ]]; then
+    current=${current%.}
+    trailingdot=yes
+fi
+
+# extract major release number
+major=`echo ${current} | sed -n 's/^\([0-9]\+\).*/\1/p'`
+# extract minor release number (if any)
+minor=`echo ${current} | sed -n 's/.*\.\([0-9]\+\)$/\1/p'`
+
+nextmajor=$major
+nextminor=$minor
+
+if [[ -z $bumpminor ]]; then
+    # bump major
+    if [[ "$major" -ne 0 || -z $minor ]]; then
+        nextmajor=$((major + 1))
+    else
+        # it's probably a pre-release package, so release number
+        # looks something like "0.1-%{?dist}"
+        # bump minor release number
+        nextminor=$((minor + 1))
+    fi
+else
+    # bump minor
+    if [[ -n $minor ]]; then
+        nextminor=$((minor + 1))
+    else
+        nextminor=".1"
+        minoradded=yes
+    fi
+fi
+
+newrel="${nextmajor}${current#$major}"
+
+if [[ -z $minoradded ]]; then
+    newrel="${newrel%$minor}${nextminor}"
+else
+    newrel="${newrel}${nextminor}"
+fi
+
+if [[ -n $trailingdot ]]; then
+    newrel="$newrel."
+fi
+
+# bump release
+sed -i "s/^\(Release:\s*\)\([0-9.]\+\)\([a-ZA-Z%]*.*\)/\1$newrel\3/" *.spec
+
+fullrelease=`rpmspec -P ${specfile} | sed -n 's/\s*Release:\s*\(.*\)\..*$/\1/p'`
+
+header="* `date +'%a %b %d %Y'` $username <$email> - $version-$fullrelease"
+
+# add changelog entry
+sed -i "/^%changelog/ a\\$header\n- $chlogmessage\n" ${specfile}
+
