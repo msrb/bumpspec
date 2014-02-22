@@ -4,6 +4,10 @@ specfile="*.spec"
 bumpminor=
 chlogmessage="Rebuilt"
 
+function usage {
+    echo "Usage: "`basename "$0"`" [-r] [-h] [-f specfile] [changelog message]"
+}
+
 while [[ $# -ne 0 ]]; do
 
     case "$1" in
@@ -15,17 +19,24 @@ while [[ $# -ne 0 ]]; do
             bumpminor=yes
             shift
             ;;
+        "-h")
+            usage
+            exit 0
+            ;;
         *)
             if [[ $# -eq 1 ]]; then
                 chlogmessage="$1"
             fi
+            echo "Unknown parameter: $1" 1>&2
+            usage
+            exit 1
             shift
     esac
 done
 
 
 if [ ! -f ${specfile} ]; then
-    echo "$specfile: no such file"
+    echo "$specfile: no such file" 1>&2
     exit 1
 fi
 
