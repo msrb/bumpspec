@@ -128,7 +128,7 @@ sed -i "s/^\(Release:\s*\)\([0-9.]\+\)\([a-ZA-Z%]*.*\)/\1$newrel\3/" ${specfile}
 
 fullrel=`rpmspec -P ${specfile} | sed -n 's/\s*Release:\s*\(.*\)\..*$/\1/p'`
 
-logheader="* `date +'%a %b %d %Y'` $username <$email> - $version-$fullrel"
+logheader="* `LC_ALL=en_us.utf-8 date +'%a %b %d %Y'` $username <$email> - $version-$fullrel"
 
 # add changelog entry
 sed -i "/^%changelog/ a\\$logheader\n- $chlogmessage\n" ${specfile}
