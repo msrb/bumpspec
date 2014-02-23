@@ -21,13 +21,18 @@
 # 3. This notice may not be removed or altered from any source
 #    distribution.
 
-specfile="*.spec"
-bumpminor=
-chlogmessage="Rebuilt"
 
 function usage {
     echo "Usage: "`basename "$0"`" [-r] [-h] [-f specfile] [changelog message]"
+    echo
+    echo "    -r           bump trailing .<DIGIT> component if found, append .1 if not"
+    echo "    -f SPECFILE  spec file to work with, defaul: *.spec"
+    echo "    -h           show this help and quit"
 }
+
+specfile="*.spec"
+bumpminor=
+chlogmessage="Rebuilt"
 
 while [[ $# -ne 0 ]]; do
 
