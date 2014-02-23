@@ -74,19 +74,19 @@ email=`git config --get user.email`
 
 version=`rpmspec -P ${specfile} | sed -n 's/\s*Version:\s*\(.*\)$/\1/p'`
 
-current=`sed -n 's/^Release:\s*\([0-9.]\+\)[a-ZA-Z%]*.*/\1/p' ${specfile}`
+currentrel=`sed -n 's/^Release:\s*\([0-9.]\+\)[a-ZA-Z%]*.*/\1/p' ${specfile}`
 
 trailingdot=
 minoradded=
-if [[ $current == *\. ]]; then
-    current=${current%.}
+if [[ $currentrel == *\. ]]; then
+    currentrel=${currentrel%.}
     trailingdot=yes
 fi
 
 # extract major release number
-major=`echo ${current} | sed -n 's/^\([0-9]\+\).*/\1/p'`
+major=`echo ${currentrel} | sed -n 's/^\([0-9]\+\).*/\1/p'`
 # extract minor release number (if any)
-minor=`echo ${current} | sed -n 's/.*\.\([0-9]\+\)$/\1/p'`
+minor=`echo ${currentrel} | sed -n 's/.*\.\([0-9]\+\)$/\1/p'`
 
 nextmajor=$major
 nextminor=$minor
@@ -111,7 +111,7 @@ else
     fi
 fi
 
-newrel="${nextmajor}${current#$major}"
+newrel="${nextmajor}${currentrel#$major}"
 
 if [[ -z $minoradded ]]; then
     newrel="${newrel%$minor}${nextminor}"
@@ -126,10 +126,10 @@ fi
 # bump release
 sed -i "s/^\(Release:\s*\)\([0-9.]\+\)\([a-ZA-Z%]*.*\)/\1$newrel\3/" ${specfile}
 
-fullrelease=`rpmspec -P ${specfile} | sed -n 's/\s*Release:\s*\(.*\)\..*$/\1/p'`
+fullrel=`rpmspec -P ${specfile} | sed -n 's/\s*Release:\s*\(.*\)\..*$/\1/p'`
 
-header="* `date +'%a %b %d %Y'` $username <$email> - $version-$fullrelease"
+logheader="* `date +'%a %b %d %Y'` $username <$email> - $version-$fullrel"
 
 # add changelog entry
-sed -i "/^%changelog/ a\\$header\n- $chlogmessage\n" ${specfile}
+sed -i "/^%changelog/ a\\$logheader\n- $chlogmessage\n" ${specfile}
 
