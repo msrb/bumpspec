@@ -73,9 +73,17 @@ if [ ! -f ${specfile} ]; then
     exit 1
 fi
 
-username=`git config --get user.name`
-email=`git config --get user.email`
-
+# get information (name, email) about current user
+havegit=`type git &> /dev/null; echo $?`
+if [[ $havegit -eq 0 ]]; then
+    username=`git config --get user.name`
+    email=`git config --get user.email`
+elif [[ -f "${HOME}/.gitconfig" ]]; then
+    username=`sed -n 's/\s*name\s*=\s*\(.*\)\s*/\1/p' ${HOME}/.gitconfig`
+    email=`sed -n 's/\s*email\s*=\s*\(.*\)\s*/\1/p' ${HOME}/.gitconfig`
+elif [[ -z $username ]]; then
+    username=${USER}
+fi
 
 version=`rpmspec -P ${specfile} | sed -n 's/\s*Version:\s*\(.*\)$/\1/p'`
 
