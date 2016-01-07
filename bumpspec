@@ -86,6 +86,10 @@ elif [[ -z $username ]]; then
 fi
 
 version=`rpmspec -P ${specfile} | sed -n 's/\s*Version:\s*\(.*\)$/\1/p'`
+epoch=`rpmspec -P ${specfile} | sed -n 's/\s*Epoch:\s*\(.*\)$/\1/p'`
+if [[ -n $epoch ]]; then
+    epoch=${epoch}:
+fi
 
 currentrel=`sed -n 's/^Release:\s*\([0-9.]\+\)[a-ZA-Z%]*.*/\1/p' ${specfile}`
 
@@ -141,7 +145,7 @@ sed -i "s/^\(Release:\s*\)\([0-9.]\+\)\([a-ZA-Z%]*.*\)/\1$newrel\3/" ${specfile}
 
 fullrel=`rpmspec -P ${specfile} | sed -n 's/\s*Release:\s*\(.*\)\..*$/\1/p'`
 
-logheader="* `LC_ALL=en_us.utf-8 date +'%a %b %d %Y'` $username <$email> - $version-$fullrel"
+logheader="* `LC_ALL=en_us.utf-8 date +'%a %b %d %Y'` $username <$email> - $epoch$version-$fullrel"
 
 # add changelog entry
 sed -i "/^%changelog/ a\\$logheader\n- $chlogmessage\n" ${specfile}
