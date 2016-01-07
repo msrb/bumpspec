@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-# Copyright (c) 2014 Michal Srb
+# Copyright (c) 2016 Michal Srb
 #
 # This software is provided 'as-is', without any express or implied
 # warranty. In no event will the authors be held liable for any damages
@@ -91,33 +91,23 @@ if [[ -n $epoch ]]; then
     epoch=${epoch}:
 fi
 
-currentrel=`sed -n 's/^Release:\s*\([0-9.]\+\)[a-ZA-Z%]*.*/\1/p' ${specfile}`
-
-trailingdot=
-minoradded=
-if [[ $currentrel == *\. ]]; then
-    currentrel=${currentrel%.}
-    trailingdot=yes
+release=`sed -n 's|^Release:\s*\(.*\)|\1|p' ${specfile}`
+disttag=
+if [[ $release == *\%{?dist} ]]; then
+    release=`sed -n 's/Release:\s*\([^ ]\+\)%{?dist}$/\1/p' ${specfile}`
+    disttag=%{?dist}
 fi
 
 # extract major release number
-major=`echo ${currentrel} | sed -n 's/^\([0-9]\+\).*/\1/p'`
+major=`echo ${release} | sed -n 's/^\([0-9]\+\).*/\1/p'`
 # extract minor release number (if any)
-minor=`echo ${currentrel} | sed -n 's/.*\.\([0-9]\+\)$/\1/p'`
+minor=`echo ${release} | sed -n 's|.*\.\([0-9]\+\)$|\1|p'`
 
 nextmajor=$major
 nextminor=$minor
 
 if [[ -z $bumpminor ]]; then
-    # bump major
-    if [[ "$major" -ne 0 || -z $minor ]]; then
-        nextmajor=$((major + 1))
-    else
-        # it's probably a pre-release package, so release number
-        # looks something like "0.1-%{?dist}"
-        # bump minor release number
-        nextminor=$((minor + 1))
-    fi
+    nextmajor=$((major + 1))
 else
     # bump minor
     if [[ -n $minor ]]; then
@@ -128,20 +118,15 @@ else
     fi
 fi
 
-newrel="${nextmajor}${currentrel#$major}"
-
+newrel="${nextmajor}${release#$major}"
 if [[ -z $minoradded ]]; then
     newrel="${newrel%$minor}${nextminor}"
 else
     newrel="${newrel}${nextminor}"
 fi
 
-if [[ -n $trailingdot ]]; then
-    newrel="$newrel."
-fi
-
 # bump release
-sed -i "s/^\(Release:\s*\)\([0-9.]\+\)\([a-ZA-Z%]*.*\)/\1$newrel\3/" ${specfile}
+sed -i "s/^\(Release:\s*\).*/\1$newrel$disttag/" ${specfile}
 
 fullrel=`rpmspec -P ${specfile} | sed -n 's/\s*Release:\s*\(.*\)\..*$/\1/p'`
 
